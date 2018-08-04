@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.wzz.atcrowdfunding.dao.UserDao" >
+	
+	<select id="queryPageUsers" resultType="cn.wzz.atcrowdfunding.bean.User">
+		select * from t_user
+		<where>
+			<if test="queryContent != null">
+				and loginacct like concat('%',#{queryContent},'%')
+			</if>
+		</where>
+		order by createtime desc
+		limit #{start} , #{size} 
+	</select>
+
+	<select id="queryTotalSize" resultType="int">
+		select count(*) from t_user
+		<where>
+			<if test="queryContent != null">
+				and loginacct like concat('%',#{queryContent},'%')
+			</if>
+		</where>
+	</select>
+
+	<insert id="insertUser">
+		insert into t_user (loginacct,username,userpswd,email,createtime)
+		values (#{loginacct},#{username},#{userpswd},#{email},#{createtime})
+	</insert>
+	
+	<update id="updateUser">
+		update t_user set 
+		loginacct = #{loginacct},
+		username = #{username},
+		email = #{email}
+		where id = #{id}
+	</update>
+	
+	<delete id="deleteUserById">
+		delete from t_user where id = #{id} 
+	</delete>
+
+	<delete id="deleteUsers">
+		delete from t_user where id in 
+		<foreach collection="users" item="user" open="(" separator="," close=")">
+			#{user.id}
+		</foreach> 
+	</delete>
+	
+	<insert id="insertUserRoles">
+		insert into t_user_role (userid,roleid) values
+		<foreach collection="roleIds" item="roleId" separator=",">
+			(#{userId},#{roleId})
+		</foreach>
+	</insert>
+	
+	<delete id="deleteUserRoles">
+		delete from t_user_role where userid = #{userId} and roleid in
+		<foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+			#{roleId}
+		</foreach>
+	</delete>
+	
+	<select id="queryRoleidsByUserid" resultType="int">
+		select roleid from t_user_role where userid = #{userid}
+	</select>
+	
+	<select id="queryPermissionsByUser" resultType="cn.wzz.atcrowdfunding.bean.Permission">
+		select * from t_permission where id in (
+			select permissionid from t_role_permission where roleid in (
+				select roleid from t_user_role where userid = #{id}
+			)
+		)
+	</select>
+</mapper>
